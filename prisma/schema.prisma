@@ -1,0 +1,83 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Provider {
+  id           String   @id @default(cuid())
+  name         String
+  type         String   @default("openai_compatible") // zai, openai, nvidia_nim, openai_compatible, other
+  baseUrl      String   @default("")
+  apiKey       String   @default("")
+  extraHeaders String   @default("{}") // JSON string
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  models       Model[]
+  agents       Agent[]
+}
+
+model Model {
+  id           String   @id @default(cuid())
+  providerId   String
+  name         String
+  displayName  String   @default("")
+  contextWindow Int     @default(4096)
+  pricingInfo  String   @default("{}") // JSON string
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  provider     Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  agents       Agent[]
+}
+
+model Agent {
+  id           String   @id @default(cuid())
+  name         String
+  role         String   @default("CUSTOM") // CEO, CTO, BACKEND, FRONTEND, QA, DEVOPS, CISO, WRITER, CUSTOM
+  description  String   @default("")
+  providerId   String
+  modelId      String
+  systemPrompt String   @default("")
+  mcpConfig    String   @default("{}") // MCP server JSON config
+  tools        String   @default("[]") // Tools/skills as JSON array
+  temperature  Float    @default(0.7)
+  topP         Float    @default(0.9)
+  maxTokens    Int      @default(2048)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  provider     Provider @relation(fields: [providerId], references: [id])
+  model        Model    @relation(fields: [modelId], references: [id])
+  tasks        Task[]
+}
+
+model Task {
+  id              String   @id @default(cuid())
+  title           String
+  description     String   @default("")
+  status          String   @default("todo") // todo, in_progress, completed, failed
+  assignedAgentId String
+  resultSummary   String   @default("")
+  responseText    String   @default("")
+  rawResponse     String   @default("{}") // JSON string
+  messages        String   @default("[]") // JSON string - messages sent to model
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  assignedAgent   Agent    @relation(fields: [assignedAgentId], references: [id], onDelete: Cascade)
+}
+
+model Connector {
+  id          String   @id @default(cuid())
+  name        String
+  type        String
+  category    String   @default("other")
+  config      String   @default("{}")
+  isActive    Boolean  @default(false)
+  isConnected Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
