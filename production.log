@@ -1,0 +1,2 @@
+$ NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log
+error: Module not found ".next/standalone/server.js"
